@@ -61,9 +61,11 @@ def download_lectures(semester, courses):
                 continue
             path = f"{course}/{tag.string}.mp4"
 
-            print(f"Downloading video number {i + 1}/{len(video_a_tags)}")
+            print(f"Downloading video number {i + 1}/{len(video_a_tags)}: ")
 
             wget.download(url, path)
+
+            print("")
 
 def main():
     if len(sys.argv[1]) == 3:
