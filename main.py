@@ -10,35 +10,40 @@ import os
 
 from scrape_for_courses import make_soup
 
-def make_soup(url):
-    """Makes bs4.BeautifulSoup instance of content of url.
+DEFAULT_SEMESTER = "h20"
 
-    :param url: url to make bs4.BeautifulSoup instance from.
-    
-    :return: bs4.BeautifulSoup instance of content of url.
+def download_lectures(semester, courses):
+    """Download lecture videos for courses in the courses list.
+
+    :param semester: String, of the format `h|v[0-9]{2}`
+    :param courses: String, matching courses offered at UiO.
     """
-    coursepage = requests.get(url)
-    coursecontent = coursepage.content
-    return BeautifulSoup(coursecontent, 'html.parser')
-
-def main(courses):
     course_df = pd.read_pickle('courses.pkl')
     course_df.set_index('coursecode', drop=False, inplace=True)
 
+    semester = semester.lower()
+
     for course in courses:
+        course = course.upper()
         if course not in course_df.index:
-            print(f"WARNING: `{course}` is not a valid course.")
+            print(f"WARNING: `{course}` does not exist.")
             continue
 
-        print(f"Finding videos in `{course}`...")
+        print(f"Finding videos in course `{course}`...")
 
         url = "https://www.uio.no/studier/emner/" + \
               course_df.at[course, 'faculty'] + "/" + \
               course_df.at[course, 'institute'] + "/" + course + "/" + \
-              "/h20/forelesningsvideoer/"
+              "/" + semester + "/forelesningsvideoer/"
         soup = make_soup(url)
 
-        container = soup.find("div", attrs={"class", "vrtx-image-listing-container"})
+        container = soup.find("div",
+                              attrs={"class", "vrtx-image-listing-container"})
+        if container is None:
+            print(f"WARNING: Course {course} exists, but has no "
+                   "lectures in this semester.")
+            continue
+
         video_a_tags = container.find_all("a", attrs={"class", "vrtx-title"})
 
         print(f"Found {len(video_a_tags)} videos, downloading them now...")
@@ -49,15 +54,26 @@ def main(courses):
             print("Have already downloaded videos from this course, "
                   "overwriting old downloads.")
 
-        for tag in video_a_tags:
+        for i, tag in enumerate(video_a_tags):
             url = tag.get("href").replace("?vrtx=view-as-webpage", "")
             if ".mp4" not in url:
                 print(f"WARNING: {tag.string} is not a .mp4 file")
                 continue
             path = f"{course}/{tag.string}.mp4"
 
+            print(f"Downloading video number {i + 1}/{len(video_a_tags)}")
+
             wget.download(url, path)
 
+def main():
+    if len(sys.argv[1]) == 3:
+        semester = sys.argv[1]
+        courses = sys.argv[2:]
+    else:
+        semester = DEFAULT_SEMESTER
+        courses = sys.argv[1:]
+
+    download_lectures(semester, courses)
+
 if __name__ == "__main__":
-    courses = sys.argv[1:]
-    main(courses)
+    main()
