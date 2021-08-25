@@ -11,6 +11,7 @@ import os
 from scrape_for_courses import make_soup
 
 DEFAULT_SEMESTER = "h20"
+DEFAULT_VIDEO_FOLDER = "forelesningsvideoer"
 
 def download_lectures(semester, courses):
     """Download lecture videos for courses in the courses list.
@@ -68,12 +69,17 @@ def download_lectures(semester, courses):
             print("")
 
 def main():
-    if len(sys.argv[1]) == 3:
-        semester = sys.argv[1]
-        courses = sys.argv[2:]
-    else:
+    for arg in sys.argv[1:]:
+        courses = []
+        video_folder = DEFAULT_VIDEO_FOLDER
         semester = DEFAULT_SEMESTER
-        courses = sys.argv[1:]
+
+        if arg.startswith("folder:"):
+            video_folder = arg[7:]
+        elif arg.startswith("semester:"):
+            semester = arg[9:]
+        else:
+            courses.append(arg)
 
     download_lectures(semester, courses)
 
