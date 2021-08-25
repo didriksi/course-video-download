@@ -74,9 +74,9 @@ def main():
         video_folder = DEFAULT_VIDEO_FOLDER
         semester = DEFAULT_SEMESTER
 
-        if arg.startswith("folder:"):
+        if arg.startswith("folder="):
             video_folder = arg[7:]
-        elif arg.startswith("semester:"):
+        elif arg.startswith("semester="):
             semester = arg[9:]
         else:
             courses.append(arg)
